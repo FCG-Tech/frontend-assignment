@@ -1,0 +1,148 @@
+openapi: 3.0.3
+info:
+  title: Super Survey Submissions
+  description: An API to list and submit surveys
+  version: 1.0.0
+servers:
+  - url: 'https://hfr7mf42p3.execute-api.eu-north-1.amazonaws.com/surveys'
+paths:
+  /surveys:
+    get:
+      operationId: ListAllSurveys
+      tags: [ survey ]
+      summary: List all available surveys, with included form fields.
+      responses:
+        200:
+          description: Successfull response
+          content:
+            application/json:
+              schema:
+                title: ListSurveys
+                type: object
+                required:
+                  - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Survey"
+        500:
+          description: Internal server error
+  /submissions:
+    post:
+      operationId: SubmitSurveyData
+      tags: [ survey ]
+      summary: Submit particiapant filled in survey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              title: SurveyData
+              type: object
+              required:
+                - participantName
+                - formId
+                - formData
+              properties:
+                participantName:
+                  type: string
+                formId:
+                  type: string
+                  format: uuid
+                formData:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/FieldData"
+      responses:
+        201:
+          description: Successfull submit
+          headers:
+            Location:
+              description: Location on newly submitted Survey
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        500:
+          description: Internal server error
+components:
+  schemas:
+    Survey:
+      type: object
+      required:
+        - id
+        - name
+        - fields
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/Field"
+        majorVersion:
+          type: integer
+        minorVersion:
+          type: integer
+    Field:
+      type: object
+      required:
+        - id
+        - name
+        - fieldType
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Travel destination"
+        required:
+          type: boolean
+        fieldType:
+          type: string
+          enum:
+            - text
+            - number
+            - date
+    FieldData:
+      type: object
+      required:
+        - fieldId
+        - data
+      properties:
+        fieldId:
+          type: string
+          format: uuid
+        data:
+          type: string
+          example:
+            - "1"
+            - "2017-07-21"
+            - "true"
+            - "It looks great"
+            - "Stockholm"
+    CreatedResponse:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
